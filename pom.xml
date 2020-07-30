@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>eventbus</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+
+  <name>eventbus</name>
+  <url>http://www.example.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <log.level>INFO</log.level>
+    <log.path>../logs</log.path>
+
+    <java.release.version>8</java.release.version>
+
+    <slf4j.api.version>1.7.30</slf4j.api.version>
+
+    <!-- Kotlin compiler configuration -->
+    <kotlin.version>1.3.72</kotlin.version>
+    <kotlin.coroutine.version>1.3.8</kotlin.coroutine.version>
+    <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+    <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+    <kotlin.compiler.languageVersion>1.3</kotlin.compiler.languageVersion>
+    <kotlin.compiler.apiVersion>1.3</kotlin.compiler.apiVersion>
+    <kotlin.code.style>official</kotlin.code.style>
+
+    <!-- Kotlin doc configuration -->
+    <dokka.version>0.9.17</dokka.version>
+    <dokka.config.noStdlibLink>true</dokka.config.noStdlibLink>
+    <dokka.config.jdkVersion>8</dokka.config.jdkVersion>
+
+    <!-- test lib -->
+    <junit.version>5.6.0</junit.version>
+    <mockito.version>3.3.0</mockito.version>
+
+    <firefly.version>5.0.0-SNAPSHOT</firefly.version>
+    <lombok.version>1.16.18</lombok.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- kotlin lib -->
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-jdk8</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-reflect</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-core</artifactId>
+        <version>${kotlin.coroutine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-jdk8</artifactId>
+        <version>${kotlin.coroutine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlinx</groupId>
+        <artifactId>kotlinx-coroutines-reactor</artifactId>
+        <version>${kotlin.coroutine.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-test-junit</artifactId>
+        <version>${kotlin.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- 3rd party lib -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- junit -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-maven-plugin</artifactId>
+          <version>${kotlin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jetbrains.dokka</groupId>
+          <artifactId>dokka-maven-plugin</artifactId>
+          <version>${dokka.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.5</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.reporting</groupId>
+              <artifactId>maven-reporting-api</artifactId>
+              <version>3.0</version>
+            </dependency>
+            <dependency>
+              <groupId>org.apache.maven.reporting</groupId>
+              <artifactId>maven-reporting-impl</artifactId>
+              <version>3.0.0</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.7</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.8</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>6.2.1</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <!-- source -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/src/main/java</source>
+                <source>${project.basedir}/src/main/kotlin</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>jdk_8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <configuration>
+              <compilerPlugins>
+                <!-- Or "jpa" for JPA support -->
+                <plugin>no-arg</plugin>
+                <plugin>all-open</plugin>
+              </compilerPlugins>
+
+              <pluginOptions>
+                <option>no-arg:annotation=com.fireflysource.common.annotation.NoArg</option>
+
+                <!--<option>all-open:annotation=com.firefly.annotation.Component</option>-->
+                <!--<option>all-open:annotation=com.firefly.annotation.Proxies</option>-->
+                <!--<option>all-open:annotation=com.firefly.annotation.Proxy</option>-->
+                <!--<option>all-open:annotation=com.firefly.db.annotation.Table</option>-->
+              </pluginOptions>
+            </configuration>
+            <executions>
+              <execution>
+                <id>compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+              <execution>
+                <id>test-compile</id>
+                <goals>
+                  <goal>test-compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                    <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+            </executions>
+
+            <dependencies>
+              <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-noarg</artifactId>
+                <version>${kotlin.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-allopen</artifactId>
+                <version>${kotlin.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgument>-parameters</compilerArgument>
+              <source>${java.release.version}</source>
+              <target>${java.release.version}</target>
+              <encoding>UTF-8</encoding>
+            </configuration>
+            <executions>
+              <!-- Replacing default-compile as it is treated specially by maven -->
+              <execution>
+                <id>default-compile</id>
+                <phase>none</phase>
+              </execution>
+              <!-- Replacing default-testCompile as it is treated specially by maven -->
+              <execution>
+                <id>default-testCompile</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>java-compile</id>
+                <phase>compile</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>java-test-compile</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- javadoc -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
+              <failOnError>true</failOnError>
+              <charset>UTF-8</charset>
+              <encoding>UTF-8</encoding>
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jdk_11_plus</id>
+      <activation>
+        <jdk>[11,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <configuration>
+              <compilerPlugins>
+                <!-- Or "jpa" for JPA support -->
+                <plugin>no-arg</plugin>
+                <plugin>all-open</plugin>
+              </compilerPlugins>
+
+              <pluginOptions>
+                <option>no-arg:annotation=com.fireflysource.common.annotation.NoArg</option>
+
+                <!--<option>all-open:annotation=com.firefly.annotation.Component</option>-->
+                <!--<option>all-open:annotation=com.firefly.annotation.Proxies</option>-->
+                <!--<option>all-open:annotation=com.firefly.annotation.Proxy</option>-->
+                <!--<option>all-open:annotation=com.firefly.db.annotation.Table</option>-->
+              </pluginOptions>
+            </configuration>
+            <executions>
+              <execution>
+                <id>compile</id>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                    <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+              <execution>
+                <id>test-compile</id>
+                <goals>
+                  <goal>test-compile</goal>
+                </goals>
+                <configuration>
+                  <sourceDirs>
+                    <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                    <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                  </sourceDirs>
+                </configuration>
+              </execution>
+            </executions>
+
+            <dependencies>
+              <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-noarg</artifactId>
+                <version>${kotlin.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-allopen</artifactId>
+                <version>${kotlin.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgument>-parameters</compilerArgument>
+              <release>${java.release.version}</release>
+              <source>${java.release.version}</source>
+              <target>${java.release.version}</target>
+              <encoding>UTF-8</encoding>
+            </configuration>
+            <executions>
+              <!-- Replacing default-compile as it is treated specially by maven -->
+              <execution>
+                <id>default-compile</id>
+                <phase>none</phase>
+              </execution>
+              <!-- Replacing default-testCompile as it is treated specially by maven -->
+              <execution>
+                <id>default-testCompile</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>java-compile</id>
+                <phase>compile</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>java-test-compile</id>
+                <phase>test-compile</phase>
+                <goals>
+                  <goal>testCompile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- javadoc -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <source>${java.release.version}</source>
+              <release>${java.release.version}</release>
+              <sourceFileIncludes>**/FeignedDoc.java</sourceFileIncludes>
+              <failOnError>true</failOnError>
+              <charset>UTF-8</charset>
+              <encoding>UTF-8</encoding>
+            </configuration>
+          </plugin>
+
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+  <repositories>
+    <repository>
+      <id>central</id>
+      <name>CentralRepository</name>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+    <repository>
+      <id>sonatype_snapshots</id>
+      <name>sonatype_snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>jcentral</id>
+      <name>JCenter</name>
+      <url>https://jcenter.bintray.com/</url>
+    </repository>
+  </repositories>
+</project>
