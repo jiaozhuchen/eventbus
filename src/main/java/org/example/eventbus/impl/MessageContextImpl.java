@@ -30,7 +30,7 @@ public class MessageContextImpl implements MessageContext {
 
     @Override
     public String getSenderAddress() {
-        return this.sendAddress == null ? this.topic : this.sendAddress;
+        return this.sendAddress;
     }
 
     @Override

@@ -26,15 +26,15 @@ public class EventBusTest {
                 System.out.println(msg.getContent());
                 assertEquals(val, msg.getContent());
                 count.getAndDecrement();
-                if(count.getAndDecrement() == 0) {
+                if(count.decrementAndGet() == 0) {
                     latch.countDown();
                 }
             }
         }
-        eb.subscribe("ADDRESS1", new MyHandler());
+        count.getAndIncrement();
         count.getAndIncrement();
         eb.subscribe("ADDRESS1", new MyHandler());
-        count.getAndIncrement();
+        eb.subscribe("ADDRESS1", new MyHandler());
         eb.publish("ADDRESS1", val);
         boolean ok = latch.await(12, TimeUnit.SECONDS);
     }
@@ -79,6 +79,30 @@ public class EventBusTest {
         }
         TimeUnit.SECONDS.sleep(1);
         actor.resume();
+        boolean ok = latch.await(12, TimeUnit.SECONDS);
+    }
+
+//    @Test
+    public void testPauseAndNoResume() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        EventBus eb = new EventBusImpl();
+        String[] data = {"aaa", "bbb", "ccc", "ddd"};
+        Set<String> expected = new HashSet<>();
+        MessageHandler<String> handler = msg -> {
+            System.out.println(msg.getContent());
+            assertTrue(expected.remove(msg.getContent()));
+            if (expected.isEmpty()) {
+                latch.countDown();
+            }
+        };
+        Actor<String> actor = eb.subscribe("ADDRESS1", handler);
+        actor.pause();
+        for (String msg : data) {
+            expected.add(msg);
+            eb.publish("ADDRESS1", msg);
+        }
+        TimeUnit.SECONDS.sleep(1);
+//        actor.resume();
         boolean ok = latch.await(12, TimeUnit.SECONDS);
     }
 }

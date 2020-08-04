@@ -10,7 +10,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBusImpl implements EventBus {
 
-    protected final ConcurrentMap<String, CopyOnWriteArrayList<Actor>> handlerMap = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, CopyOnWriteArrayList<Actor>> topicHandlerMap = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<String, CopyOnWriteArrayList<Actor>> sendHandlerMap = new ConcurrentHashMap<>();
 
     @Override
     public void publish(String topic, Object message) {
@@ -24,13 +25,13 @@ public class EventBusImpl implements EventBus {
         actor.handleMessage(handler);
         CopyOnWriteArrayList<Actor> list = new CopyOnWriteArrayList<>();
         list.add(actor);
-        handlerMap.merge(topic, list, (old, prev) -> {old.add(prev.get(0));return old;});
+        topicHandlerMap.merge(topic, list, (old, prev) -> {old.add(prev.get(0));return old;});
         return actor;
     }
 
     @Override
     public <T> List<Actor> findByTopic(String topic) {
-        return handlerMap.get(topic);
+        return topicHandlerMap.get(topic);
     }
 
     @Override
@@ -40,17 +41,24 @@ public class EventBusImpl implements EventBus {
     }
 
     protected void sendOrPublish(MessageContextImpl msg) {
-        CopyOnWriteArrayList<Actor> handlers = handlerMap.get(msg.getSenderAddress());
-        if (handlers == null) {
-            throw new RuntimeException("没有处理者");
-        }
         if (msg.getTopic() == null) {
+            CopyOnWriteArrayList<Actor> handlers = sendHandlerMap.get(msg.getSenderAddress());
+            checkHandlers(handlers);
             Actor actor = handlers.get(0);
             actor.receive(msg);
         } else {
+            CopyOnWriteArrayList<Actor> handlers = topicHandlerMap.get(msg.getTopic());
+            checkHandlers(handlers);
             for (Actor actor : handlers) {
                 actor.receive(msg);
             }
+        }
+    }
+
+    //TODO chenchen 放到默认topic中
+    private void checkHandlers(CopyOnWriteArrayList<Actor> handlers) {
+        if (handlers == null) {
+            throw new RuntimeException("没有处理者");
         }
     }
 
@@ -64,7 +72,7 @@ public class EventBusImpl implements EventBus {
         actor.handleMessage(handler);
         CopyOnWriteArrayList<Actor> list = new CopyOnWriteArrayList<>();
         list.add(actor);
-        handlerMap.merge(address, list, (old, prev) -> {old.add(prev.get(0));return old;});
+        sendHandlerMap.merge(address, list, (old, prev) -> {old.add(prev.get(0));return old;});
         return actor;
     }
 
@@ -75,7 +83,7 @@ public class EventBusImpl implements EventBus {
 
     @Override
     public <T> Actor<T> findByAddress(String address) {
-        CopyOnWriteArrayList<Actor> actors = handlerMap.get(address);
+        CopyOnWriteArrayList<Actor> actors = sendHandlerMap.get(address);
         if(actors.isEmpty()) {
             return null;
         }
@@ -86,5 +94,12 @@ public class EventBusImpl implements EventBus {
     public <T> ActorBuilderImpl<T> create() {
         ActorBuilderImpl actorBuilder = new ActorBuilderImpl();
         return actorBuilder;
+    }
+
+    @Override
+    public void shutDown() {
+        sendHandlerMap.forEach((k, v) -> {
+            v.forEach(Actor::shutdown);
+        });
     }
 }

@@ -2,6 +2,7 @@ package org.example.eventbus.impl;
 
 import org.example.eventbus.Actor;
 import org.example.eventbus.ActorBuilder;
+import org.example.eventbus.EventBus;
 import org.example.eventbus.MessageHandler;
 
 public class ActorBuilderImpl<T> implements ActorBuilder<T> {

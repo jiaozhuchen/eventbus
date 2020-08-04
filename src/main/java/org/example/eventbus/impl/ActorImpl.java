@@ -4,29 +4,35 @@ import org.example.eventbus.Actor;
 import org.example.eventbus.MessageContext;
 import org.example.eventbus.MessageHandler;
 
+import java.util.ArrayList;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class ActorImpl<T> implements Actor<T> {
+public class ActorImpl<T> implements Actor<T>, Runnable {
     private String topic;
     private String address;
     private MessageHandler<T> handler;
-    private int maxBufferedMessages = 1000;
     private BlockingQueue<MessageContext<T>> pending = new LinkedBlockingQueue<>();
-    private long demand = Long.MAX_VALUE;
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private volatile long demand = Long.MAX_VALUE;
+    private Thread thread;
 
+    private static final int RUNNING    = -1;
+    private static final int SHUTDOWN   =  0;
+    private static final int STOP       =  1;
+    private final AtomicInteger state = new AtomicInteger(RUNNING);
 
-    public ActorImpl() {
-
-    }
 
     public ActorImpl(String address) {
         this.address = address;
+        this.thread = new Thread(this);
+        this.thread.start();
     }
 
     public ActorImpl(String address, String topic) {
         this.address = address;
         this.topic = topic;
+        this.thread = new Thread(this);
+        this.thread.start();
     }
 
 
@@ -58,13 +64,29 @@ public class ActorImpl<T> implements Actor<T> {
 
     @Override
     public CompletableFuture<Void> shutdown() {
-        executorService.shutdown();
+        advanceRunState(SHUTDOWN);
+        interruptWorker();
         return null;
     }
 
     @Override
     public void shutdownNow() {
-        executorService.shutdownNow();
+        ArrayList<MessageContext<T>> messageList = new ArrayList<>();
+        pending.drainTo(messageList);
+        advanceRunState(STOP);
+        interruptWorker();
+    }
+
+    private void advanceRunState(int targetState) {
+        for (;;) {
+            int c = state.get();
+            if (state.compareAndSet(c, targetState))
+                break;
+        }
+    }
+
+    private void interruptWorker() {
+        thread.interrupt();
     }
 
     @Override
@@ -73,30 +95,18 @@ public class ActorImpl<T> implements Actor<T> {
     }
 
     public void receive(MessageContext<T> msg) {
-        executorService.execute(() -> doReceive(msg));
+        pending.add(msg);
     }
 
     protected boolean doReceive(MessageContext<T> message) {
         if (handler == null) {
             return false;
         }
-        if (demand == 0L) {
-            if (pending.size() < maxBufferedMessages) {
-                pending.add(message);
-                return true;
-            } else {
-                System.out.println("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
-            }
-            return true;
-        } else if (pending.size() > 0) {
-            pending.add(message);
-            message = pending.poll();
-        }
-        deliver(message);
+        handlerMessage(message);
         return true;
     }
 
-    private void deliver(MessageContext<T> message) {
+    private void handlerMessage(MessageContext<T> message) {
         handler.handle(message);
         checkNextTick();
     }
@@ -104,15 +114,30 @@ public class ActorImpl<T> implements Actor<T> {
     private void checkNextTick() {
         if (!pending.isEmpty() && demand > 0L) {
             MessageContext<T> message;
-            synchronized (ActorImpl.this) {
-                if (demand == 0L || (message = pending.poll()) == null) {
-                    return;
-                }
-                executorService.execute(() -> {
-                    deliver(message);
-                });
+            if (demand == 0L || (message = pending.poll()) == null) {
+                return;
             }
+            handlerMessage(message);
         }
     }
 
+    @Override
+    public void run() {
+        MessageContext<T> message;
+        try {
+            while(demand > 0 && (message = getMessage()) != null) {
+                doReceive(message);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private MessageContext<T> getMessage() throws InterruptedException {
+        int st = state.get();
+        if(st==STOP || (st==SHUTDOWN && pending.isEmpty())) {
+            return null;
+        }
+        return pending.take();
+    }
 }

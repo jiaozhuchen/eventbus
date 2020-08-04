@@ -24,4 +24,6 @@ public interface EventBus {
 
     <T> ActorBuilder<T> create();
 
+    void shutDown();
+
 }
